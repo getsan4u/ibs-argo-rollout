@@ -2,8 +2,8 @@
 
 This repository demonstrates a GitOps-managed progressive canary deployment on
 Amazon EKS. ArgoCD reconciles the production overlay, and Argo Rollouts replaces
-a standard Kubernetes `Deployment` with a controlled rollout of the official
-`argoproj/rollouts-demo` application.
+a standard Kubernetes `Deployment` with a controlled rollout of the Argo
+Rollouts demo application built from source and stored in Amazon ECR.
 
 The initial version is `blue`. Changing the Kustomize image tag to `green`
 starts a canary rollout across five replicas.
@@ -36,10 +36,16 @@ deploy/
         ├── kustomization.yaml
         └── patch-rollout.yaml
 scripts/
+├── build-and-push-ecr.sh
 ├── get-alb-url.sh
 ├── watch-rollout.sh
 ├── generate-traffic.sh
 └── promote-blue-to-green.sh
+src/
+├── Dockerfile
+├── Makefile
+├── main.go
+└── application assets
 ```
 
 The GitOps path for this application is:
@@ -56,8 +62,52 @@ deploy/overlays/prod
 - AWS Load Balancer Controller
 - `kubectl` configured for the cluster
 - `kustomize`
+- AWS CLI authenticated to account `364641874932`
+- Docker with Buildx
+- Permission to push images to the `ibs-demo-apps` ECR repository
 - A `rollouts-demo` namespace, or an ArgoCD Application configured with
   `CreateNamespace=true`
+
+## Application Image
+
+The application source under `src/` is based on the official
+[`argoproj/rollouts-demo`](https://github.com/argoproj/rollouts-demo) project,
+using upstream commit `f528fdd2189e877dfb8a2de21b6989853e8e8d26` as the
+reference snapshot.
+
+The production overlay maps the logical `rollouts-demo` image to:
+
+```text
+364641874932.dkr.ecr.ap-south-1.amazonaws.com/ibs-demo-apps
+```
+
+Build and push the initial blue and green images:
+
+```bash
+./scripts/build-and-push-ecr.sh
+```
+
+The script logs Docker into ECR, builds Linux/AMD64 images, and pushes:
+
+```text
+364641874932.dkr.ecr.ap-south-1.amazonaws.com/ibs-demo-apps:blue
+364641874932.dkr.ecr.ap-south-1.amazonaws.com/ibs-demo-apps:green
+```
+
+Environment variables can override the defaults:
+
+```bash
+AWS_REGION=ap-south-1 \
+ECR_REPOSITORY=364641874932.dkr.ecr.ap-south-1.amazonaws.com/ibs-demo-apps \
+TARGET_PLATFORM=linux/amd64 \
+./scripts/build-and-push-ecr.sh blue green
+```
+
+For the later rollback phase, build the intentionally unhealthy image with:
+
+```bash
+./scripts/build-and-push-ecr.sh bad-green
+```
 
 ## How GitOps Deployment Works
 
@@ -79,6 +129,9 @@ ArgoCD continuously compares the Git revision with the cluster. After the
 Kustomize image tag is committed and pushed, ArgoCD detects the changed rendered
 `Rollout` and synchronizes it. Normal deployment does not require
 `kubectl apply`.
+
+EKS worker nodes authenticate to ECR through their node IAM role. No Kubernetes
+image pull secret is required when the node role has normal ECR pull access.
 
 ## Canary Sequence
 
