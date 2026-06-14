@@ -62,7 +62,7 @@ deploy/overlays/prod
 - AWS Load Balancer Controller
 - `kubectl` configured for the cluster
 - `kustomize`
-- AWS CLI authenticated to account `364641874932`
+- AWS CLI profile `personal-ssg` authenticated to account `364641874932`
 - Docker with Buildx
 - Permission to push images to the `ibs-demo-apps` ECR repository
 - A `rollouts-demo` namespace, or an ArgoCD Application configured with
@@ -98,6 +98,7 @@ Environment variables can override the defaults:
 
 ```bash
 AWS_REGION=ap-south-1 \
+AWS_PROFILE=personal-ssg \
 ECR_REPOSITORY=364641874932.dkr.ecr.ap-south-1.amazonaws.com/ibs-demo-apps \
 TARGET_PLATFORM=linux/amd64 \
 ./scripts/build-and-push-ecr.sh blue green

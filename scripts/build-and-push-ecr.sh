@@ -4,6 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AWS_REGION="${AWS_REGION:-ap-south-1}"
+AWS_PROFILE="${AWS_PROFILE:-personal-ssg}"
 ECR_REPOSITORY="${ECR_REPOSITORY:-364641874932.dkr.ecr.ap-south-1.amazonaws.com/ibs-demo-apps}"
 TARGET_PLATFORM="${TARGET_PLATFORM:-linux/amd64}"
 ECR_REGISTRY="${ECR_REPOSITORY%%/*}"
@@ -21,7 +22,7 @@ for command in aws docker; do
   fi
 done
 
-aws ecr get-login-password --region "$AWS_REGION" |
+aws ecr get-login-password --profile "$AWS_PROFILE" --region "$AWS_REGION" |
   docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
 for tag in "${tags[@]}"; do

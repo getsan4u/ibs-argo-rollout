@@ -17,6 +17,15 @@ spec:
       containers:
         - name: rollouts-demo
           image: rollouts-demo:blue
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10001
           ports:
             - name: http
               containerPort: 8080
