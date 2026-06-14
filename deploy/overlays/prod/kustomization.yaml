@@ -6,6 +6,6 @@ resources:
 images:
   - name: rollouts-demo
     newName: 364641874932.dkr.ecr.ap-south-1.amazonaws.com/ibs-demo-apps
-    newTag: blue
+    newTag: green
 patches:
   - path: patch-rollout.yaml
